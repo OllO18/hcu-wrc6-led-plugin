@@ -1,0 +1,21 @@
+{
+  "name": "hcu-wrc6-led-plugin",
+  "version": "1.0.0",
+  "description": "Plugin für die Homematic IP Home Control Unit: LEDs des Wandtasters HmIP-WRC6-230 abhängig von Sensoren und Geräten schalten",
+  "main": "src/plugin.js",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.18.0",
+    "uuid": "^11.0.0",
+    "express": "^4.19.2"
+  },
+  "scripts": {
+    "start": "node src/plugin.js"
+  },
+  "author": "OllO18",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OllO18/hcu-wrc6-led-plugin"
+  },
+  "private": true
+}

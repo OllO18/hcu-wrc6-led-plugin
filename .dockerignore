@@ -1,0 +1,6 @@
+data
+*.tar.gz
+*.tar
+.git
+authtoken.txt
+*.zip

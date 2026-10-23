@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WRC6 LED-Steuerung</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>WRC6 LED-Steuerung</h1>
+    <span id="version" class="version"></span>
+    <span id="status" class="status">Verbinde mit der HCU …</span>
+  </header>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="card wrc-device-list">
+        <h2>Wandtaster</h2>
+        <p class="card-sub">Homematic IP HmIP-WRC6-230 – zum Auswählen anklicken</p>
+        <div id="wrcDeviceList"></div>
+        <p class="empty" id="wrcDeviceListEmpty" style="display:none;">Kein Wandtaster HmIP-WRC6-230 gefunden.</p>
+        <!-- Platz fuer weitere geraetebezogene Aktionen (z.B. Backup) - siehe
+             Wunsch: "hier könnten später noch weitere Buttons hinzukommen" -
+             absichtlich als eigener, erweiterbarer Bereich unterhalb der
+             Geraeteliste, noch ohne konkrete Aktion. -->
+        <div class="wrc-device-actions" id="wrcDeviceActions"></div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="card intro-card">
+        <h2>So funktioniert's</h2>
+        <p>Dieses Plugin lässt die LEDs eines Homematic IP Wandtasters (HmIP-WRC6-230) anzeigen, was im Haus los ist –
+          zum Beispiel <strong>LED rot, solange ein Fenster offen ist</strong>, oder <strong>LED blau, solange die Waschmaschine läuft</strong>.</p>
+        <ol>
+          <li>Links den Wandtaster auswählen.</li>
+          <li>Unter „Neue Regel“ die Auslöser ankreuzen und LED, Farbe und Helligkeit festlegen.</li>
+          <li>Die LED leuchtet, solange die Bedingung erfüllt ist, und geht danach von selbst wieder aus.</li>
+        </ol>
+      </div>
+
+      <div class="card wrc-device-detail" id="manualControlsCard">
+        <h2 class="collapsible-heading" id="manualControlsToggle">
+          <span class="toggle-arrow">▸</span>
+          <span id="manualControlsHeading">LEDs direkt schalten (zum Ausprobieren)</span>
+        </h2>
+        <div class="collapsible-body" id="manualControlsBody">
+          <p class="card-sub">Farbe und Helligkeit sofort testen. Beim nächsten passenden Ereignis übernehmen wieder die Regeln.</p>
+          <div id="manualControls"></div>
+          <p class="empty" id="manualEmpty" style="display:none;">Bitte links einen Wandtaster auswählen.</p>
+        </div>
+      </div>
+
+      <div class="card wrc-devices-table" id="devicesTableCard">
+        <h2 class="collapsible-heading" id="devicesTableToggle">
+          <span class="toggle-arrow">▸</span>
+          <span>Alle Geräte und ihr aktueller Zustand</span>
+        </h2>
+        <div class="collapsible-body" id="devicesTableBody">
+          <div class="table-scroll">
+            <table id="devicesTable">
+              <thead>
+                <tr>
+                  <th>Gerät</th>
+                  <th>Kanal</th>
+                  <th>Art</th>
+                  <th>Zustand</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-new-rule" id="ruleFormCard">
+        <h2 id="ruleFormHeading">Neue Regel: Wenn … dann LED</h2>
+        <div class="edit-banner" id="editBanner" style="display:none;">
+          <span id="editBannerText"></span>
+          <button type="button" class="secondary" id="cancelEditBtn">Abbrechen</button>
+        </div>
+        <p class="card-sub">Auslöser ankreuzen, LED und Farbe wählen, „Regel hinzufügen“ klicken.</p>
+        <form class="new-rule" id="newRuleForm">
+          <div class="source-block">
+            <label>1. Auslöser – wann soll die LED leuchten?</label>
+            <div class="source-filters">
+              <input type="search" id="sourceSearch" placeholder="Suchen: Gerät, Raum, Art …" />
+              <details class="multi-filter" id="sourceCategoryFilter"></details>
+              <details class="multi-filter" id="sourceRoomFilter"></details>
+            </div>
+            <div class="source-tools">
+              <label class="inline"><input type="checkbox" id="sourceOnlySelected" /> nur ausgewählte</label>
+              <button type="button" class="secondary small" id="selectVisibleBtn">alle sichtbaren auswählen</button>
+              <button type="button" class="secondary small" id="deselectVisibleBtn">alle sichtbaren abwählen</button>
+              <span class="muted" id="sourceCount"></span>
+            </div>
+            <div class="source-list" id="sourceList"></div>
+            <p class="hint" id="sourceHint"></p>
+            <label for="sourceLogicSelect">Bei mehreren Auslösern</label>
+            <select id="sourceLogicSelect">
+              <option value="OR">LED an, wenn mindestens einer zutrifft (ODER)</option>
+              <option value="AND">LED an, nur wenn alle gleichzeitig zutreffen (UND)</option>
+            </select>
+          </div>
+          <div class="arrow" id="ruleFormArrow">&#8594;</div>
+          <div class="target-block" id="ruleFormTargetBlock">
+            <label>2. LED – welche LED soll leuchten?</label>
+            <div class="target-device-label" id="targetDeviceLabel">–</div>
+            <p class="muted" style="margin:2px 0 10px 0;">Anderen Wandtaster links in der Liste auswählen.</p>
+            <label for="targetChannelSelect">LED</label>
+            <select id="targetChannelSelect" required></select>
+            <p class="hint" id="targetHint"></p>
+          </div>
+          <label class="invert-toggle" id="invertToggle">
+            <input type="checkbox" id="invertCheckbox" />
+            umkehren (LED an, wenn die Bedingung <em>nicht</em> erfüllt ist)
+          </label>
+          <button type="submit" id="ruleSubmitBtn">Regel hinzufügen</button>
+
+          <div class="rule-target-state" id="ruleTargetState" style="display:none;">
+            <div>
+              <label for="onDimLevelInput">Helligkeit: <span id="onDimLevelValue">100%</span></label>
+              <input type="range" id="onDimLevelInput" min="0" max="100" value="100" />
+            </div>
+            <div id="onColorPicker" class="color-picker" style="display:none;"></div>
+            <div id="onBehaviourRow" style="display:none;">
+              <label for="onBehaviourSelect">Leuchtart</label>
+              <select id="onBehaviourSelect"></select>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="card card-active-rules">
+        <div class="card-title-row">
+          <h2>Regeln</h2>
+          <div class="rules-backup">
+            <a class="button-like secondary small" href="api/rules/export" download>Regeln sichern</a>
+            <button type="button" class="secondary small" id="importRulesBtn">Regeln laden …</button>
+            <input type="file" id="importRulesFile" accept=".json,application/json" style="display:none" />
+          </div>
+        </div>
+        <p class="card-sub">Treffen mehrere Regeln für dieselbe LED gleichzeitig zu, bestimmt die oberste Regel Farbe und Helligkeit. Reihenfolge mit ▲▼ ändern. „Regeln sichern“ speichert alle Regeln als Datei; „Regeln laden“ fügt Regeln aus einer solchen Datei hinzu.</p>
+        <table id="rulesTable">
+          <thead>
+            <tr>
+              <th>Vorrang</th>
+              <th>Auslöser</th>
+              <th>LED</th>
+              <th>Farbe / Helligkeit</th>
+              <th>Umgekehrt</th>
+              <th>Ein</th>
+              <th>Zustand</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p class="empty" id="rulesEmpty" style="display:none;">Noch keine Regeln. Oben unter „Neue Regel“ anlegen.</p>
+      </div>
+
+      <div class="card card-log">
+        <h2>Verlauf</h2>
+        <p class="card-sub">Die letzten Schaltvorgänge seit dem Start des Plugins.</p>
+        <div id="log"></div>
+        <p class="empty" id="logEmpty" style="display:none;">Noch keine Schaltvorgänge.</p>
+      </div>
+    </main>
+
+    <aside class="sidebar-right">
+      <div class="card led-map-card">
+        <h2>LED-Belegung</h2>
+        <p class="card-sub" id="ledMapDevice">–</p>
+        <div id="ledMap"></div>
+        <p class="muted" style="font-size:0.8rem;margin:6px 0 0 0;">Zeigt live, welche LED gerade in welcher Farbe leuchtet. Die Nummern entsprechen den LED-Nummern in den Regeln.</p>
+      </div>
+    </aside>
+  </div>
+
+  <footer>WRC6 LED-Steuerung &middot; Plugin für die Homematic IP Home Control Unit &middot; kein offizielles Produkt von eQ-3</footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

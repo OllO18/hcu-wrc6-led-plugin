@@ -1,0 +1,569 @@
+:root {
+  --bg: #f4f5f7;
+  --card: #ffffff;
+  --border: #dfe2e8;
+  --text: #1f2430;
+  --muted: #6b7280;
+  --accent: #2f6fed;
+  --ok: #1a8a4a;
+  --err: #c23b3b;
+  --on: #2f6fed;
+  --off: #9aa1ac;
+  --warn: #b7791f;
+
+  /* Markenfarbe der Homematic-IP-Website (#003761, dunkles Navy - einzige
+     Farbe, die sich zuverlaessig von dort bestaetigen liess) plus ein paar
+     frische Akzentfarben, um die Oberflaeche aufzulockern (Nutzer-Feedback:
+     "Machs ein bischen bunter. Ein schönen Hintergrund."). Jede Karte
+     bekommt unten eine eigene Akzentfarbe als linke Randlinie, rein zur
+     visuellen Unterscheidung - an der Funktion aendert das nichts. */
+  --brand: #003761;
+  --accent-teal: #0e9488;
+  --accent-purple: #7c4fe0;
+  --accent-amber: #d98a1f;
+  --accent-rose: #d1497a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--text);
+  /* Dezenter, heller Verlauf statt eines flachen Grautons - haengt fest am
+     Viewport (kein Mitscrollen), damit er auch bei langen Seiten wie ein
+     ruhiger Hintergrund wirkt statt wie eine sich wiederholende Textur. */
+  background: linear-gradient(160deg, #eaf1fb 0%, #f3eefb 45%, #fdf3ec 100%) fixed;
+  min-height: 100vh;
+}
+
+header {
+  padding: 20px 16px 20px 0;
+  background: var(--card);
+  border-bottom: 3px solid var(--brand);
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+header h1 { font-size: 1.25rem; margin: 0; }
+header .version {
+  font-size: 0.75rem;
+  color: var(--brand);
+  background: #e3edf6;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+header .status { font-size: 0.85rem; color: var(--muted); }
+header .status.connected { color: var(--ok); }
+header .status.disconnected { color: var(--err); }
+
+/* Gesamtlayout: echtes, durchgehendes Menue links (Geraeteliste, Spalte 1),
+   rechts daneben alle anderen Karten (manuelle Steuerung, Geraetetabelle,
+   Regeln, Verlauf) - siehe Nutzer-Feedback "soll ja so einen art menue
+   entstehen" / "echtes durchgehendes Menue links". Die Seitenleiste bleibt
+   beim Scrollen stehen (sticky), damit die Geraeteauswahl immer erreichbar
+   ist, auch wenn die rechte Seite laenger ist als der Bildschirm. */
+.app-layout {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 24px 16px 24px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.sidebar {
+  flex: 0 0 240px;
+  position: sticky;
+  top: 20px;
+}
+
+.content {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .app-layout { flex-direction: column; }
+  .sidebar { position: static; flex: none; width: 100%; }
+}
+
+/* Spalte 3 des wrc-layout: "Geraete & Kanaele (live)" als kompaktes,
+   scrollbares Menue statt einer beliebig langen Tabelle (Nutzer-Feedback:
+   deutlich kuerzen). Kopfzeile bleibt beim Scrollen sichtbar. */
+.table-scroll {
+  max-height: 260px;
+  overflow-y: auto;
+}
+.table-scroll thead th {
+  position: sticky;
+  top: 0;
+  background: var(--card);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+
+/* Jede Karte bekommt eine eigene Akzentfarbe als linken Rand - rein optisch,
+   erleichtert aber auch das schnelle Wiedererkennen der Bereiche. */
+.wrc-device-list { border-left-color: var(--brand); }
+.wrc-device-detail { border-left-color: var(--accent); }
+.wrc-devices-table { border-left-color: var(--accent-teal); }
+.card-new-rule { border-left-color: var(--accent-purple); }
+.card-active-rules { border-left-color: var(--accent-amber); }
+.card-log { border-left-color: var(--accent-rose); }
+
+.card h2 {
+  font-size: 1rem;
+  margin: 0 0 14px 0;
+}
+
+/* Spalte 2 ("... LEDs manuell steuern") und Spalte 3 ("Geraete & Kanaele")
+   sind standardmaessig eingeklappt und oeffnen erst per Klick auf die
+   Ueberschrift (Nutzer-Feedback: beides nur ein Nebenprodukt, soll nicht
+   immer sofort sichtbar sein). */
+.card .collapsible-heading {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.card .collapsible-heading:hover { color: var(--accent); }
+.collapsible-heading .toggle-arrow {
+  display: inline-block;
+  font-size: 0.7em;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+.card.expanded .collapsible-heading .toggle-arrow { transform: rotate(90deg); }
+.collapsible-body { display: none; margin-top: 14px; }
+.card.expanded .collapsible-body { display: block; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.badge.on { background: #e8f0fe; color: var(--on); }
+.badge.off { background: #eef0f3; color: var(--off); }
+.badge.ok { background: #e6f6ec; color: var(--ok); }
+.badge.err { background: #fbeaea; color: var(--err); }
+/* Regel trifft zwar zu, wird aber von einer hoeher priorisierten Regel fuer
+   dasselbe Ziel gerade ueberschrieben - siehe getRulesWithStatus in rules.js. */
+.badge.overridden { background: #fdf3e2; color: var(--warn); }
+
+/* Rang-Spalte in der Regel-Tabelle: Pfeile zum Verschieben der Prioritaet
+   (siehe moveRule) - bei mehreren Regeln fuer dasselbe Ziel entscheidet die
+   Reihenfolge, welche im Konfliktfall gewinnt. */
+.rank-cell { white-space: nowrap; }
+.rank-btn {
+  padding: 2px 6px;
+  font-size: 0.85em;
+  line-height: 1;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.rank-btn:disabled { opacity: 0.35; cursor: default; }
+
+form.new-rule {
+  display: grid;
+  grid-template-columns: 1.6fr auto 1fr auto auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.source-block { display: flex; flex-direction: column; }
+
+.target-block { display: flex; flex-direction: column; }
+
+.target-block select + label { margin-top: 8px; }
+
+/* Ersetzt seit v0.14.0 das fruehere zweite Geraete-Dropdown im
+   "Neue Regel"-Formular (siehe target-device-label in index.html): keine
+   eigene Auswahl mehr, sondern reine Anzeige des links in Spalte 1
+   ausgewaehlten Geraets - so gibt es nur noch EINE Stelle, an der man ein
+   WRC6-230-Geraet auswaehlt. */
+.target-device-label {
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #eef0f3;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+/* Spalte 1 des wrc-layout: klickbare Liste der WRC6-230-Geraete (ersetzt
+   das fruehere Dropdown "manualDeviceFilter") - siehe renderWrcDeviceList
+   in app.js. */
+.wrc-device-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.wrc-device-row:hover { background: #f4f5f7; }
+.wrc-device-row.selected {
+  background: #e3edf6;
+  border-color: var(--brand);
+}
+.wrc-device-row .wrc-device-name { font-weight: 500; }
+.wrc-device-row .wrc-device-count { font-size: 0.8rem; color: var(--muted); }
+
+/* Noch leer - Platzhalter fuer spaeter (siehe Kommentar in index.html). */
+.wrc-device-actions:empty { display: none; }
+
+.source-filters {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.source-filters select { padding: 5px 6px; font-size: 0.8rem; }
+
+.source-list {
+  max-height: 160px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: #fbfbfc;
+}
+
+.source-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 0.85rem;
+}
+
+.source-row:last-child { border-bottom: none; }
+
+.source-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  color: var(--text);
+  margin: 0;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.source-row input[type="checkbox"] { flex: none; }
+
+form.new-rule label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+select, button, input[type="checkbox"] {
+  font-size: 0.9rem;
+}
+
+select {
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.muted { color: var(--muted); font-size: 0.85em; }
+
+.hint {
+  margin: 4px 0 0 0;
+  font-size: 0.75rem;
+  color: var(--err);
+  min-height: 1em;
+}
+
+button {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--brand));
+  color: #fff;
+  cursor: pointer;
+}
+
+button:disabled { cursor: default; opacity: 0.8; }
+
+button.secondary {
+  background: #fff;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+button.danger {
+  background: #fff;
+  color: var(--err);
+  border-color: var(--err);
+}
+
+/* Nach .secondary/.danger platziert, damit sie z.B. beim "Aus"-Button
+   (Klassen "secondary pending"/"secondary success" gleichzeitig) den
+   weissen Hintergrund von .secondary sichtbar ueberschreiben. */
+button.pending {
+  background: var(--muted);
+  border-color: var(--muted);
+  color: #fff;
+}
+
+button.success {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+  transition: background 0.15s ease;
+}
+
+.arrow { text-align: center; color: var(--muted); font-size: 1.1rem; padding-bottom: 8px; }
+
+.invert-toggle { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+
+.empty { color: var(--muted); font-size: 0.9rem; }
+
+.log-entry { font-size: 0.85rem; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+.log-entry .ts { color: var(--muted); margin-right: 8px; }
+
+.card-sub { margin: -8px 0 14px 0; color: var(--muted); font-size: 0.85rem; }
+
+.color-picker {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  padding: 0;
+  flex: none;
+}
+
+.color-swatch.selected {
+  border-color: var(--text);
+  box-shadow: 0 0 0 2px #fff inset, 0 0 0 3px var(--text);
+}
+
+/* Jede Zeile besteht aus zwei Teilen UNTEREINANDER: oben der (ggf.
+   umbrechende) Name, darunter die Steuerelemente. So bleiben Slider,
+   Farbwahl und Buttons unabhaengig von der Namenslaenge zuverlaessig in
+   einer gemeinsamen Reihe. */
+.manual-control-row {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.manual-control-row:last-child { border-bottom: none; }
+
+.manual-control-row .mc-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.manual-control-row .mc-header .name { font-weight: 600; font-size: 0.9rem; }
+
+/* Grafische Zustandsanzeige: kleine, farbig hinterlegte Kapsel mit der
+   tatsaechlich aktiven Helligkeit in Prozent - Hintergrundfarbe entspricht
+   der tatsaechlich aktiven Signalfarbe (siehe COLOR_SWATCHES/renderManualControls).
+   Farbe/Textfarbe werden per Inline-Style gesetzt, da sie von den 8 festen
+   Signalfarben abhaengen. */
+.manual-control-row .mc-header .current-state {
+  display: inline-block;
+  min-width: 2.6em;
+  text-align: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #eef0f3;
+  color: var(--muted);
+}
+
+.manual-control-row .mc-header .current-behaviour {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.manual-control-row .mc-controls .behaviour-select {
+  width: auto;
+  flex: none;
+  font-size: 0.8rem;
+  padding: 6px 8px;
+}
+
+.manual-control-row .mc-controls {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.manual-control-row .slider-col {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  flex: 1 1 140px;
+  min-width: 110px;
+}
+
+.manual-control-row .slider-col input[type="range"] { flex: 1; min-width: 60px; }
+
+.manual-control-row .mc-controls .color-picker { flex: none; flex-wrap: nowrap; margin-top: 0; }
+
+.manual-control-row .mc-controls button { flex: none; white-space: nowrap; }
+
+.manual-control-row .mc-controls .ramp-col {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.manual-control-row .mc-controls .ramp-col input[type="number"] {
+  width: 4.5em;
+  padding: 5px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.rule-target-state {
+  grid-column: 1 / -1;
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.rule-target-state label { color: var(--muted); font-size: 0.75rem; }
+
+footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+  padding: 24px;
+}
+
+
+/* v0.20.0: Quellen bearbeiten + bessere Quellen-Filter */
+.source-filters input[type="search"] { width: 260px; max-width: 100%; }
+.source-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0; }
+.source-tools label.inline { display: inline-flex; align-items: center; gap: 4px; margin: 0; font-weight: normal; }
+button.small { padding: 3px 8px; font-size: 0.85em; }
+.edit-banner { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: #fff4d6; border: 1px solid #e8c14a; border-radius: 6px; padding: 8px 12px; margin: 6px 0 12px 0; color: #5a4300; }
+.card-new-rule.editing { outline: 2px solid #e8c14a; }
+
+/* v0.21.0: Schwellwert-Ausloeser */
+.source-row .threshold { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; margin-right: 8px; white-space: nowrap; }
+.source-row .threshold select { width: auto; padding: 2px 4px; }
+.source-row .threshold input { width: 80px; padding: 2px 6px; }
+.badge.value { background: #eef3fb; color: #1d3f6e; }
+
+/* v0.21.0: Quellenliste ueber die volle Breite und deutlich hoeher - bei
+   ~200 moeglichen Ausloesern war die 160px-Box zu klein. Ziel/Invertiert/
+   Hinzufuegen stehen darunter in einer Zeile. */
+form.new-rule { grid-template-columns: auto minmax(220px, 1fr) auto auto; }
+form.new-rule .source-block { grid-column: 1 / -1; }
+.source-list { max-height: 420px; }
+@media (max-width: 900px) {
+  form.new-rule { grid-template-columns: 1fr; }
+  form.new-rule .arrow { display: none; }
+}
+
+/* v0.22.0: Mehrfachauswahl-Filter (Kategorie, Raum) */
+.multi-filter { position: relative; }
+.multi-filter > summary { list-style: none; cursor: pointer; padding: 6px 28px 6px 10px; border: 1px solid var(--border);
+  border-radius: 6px; background: #fff; min-width: 170px; white-space: nowrap; font-size: 0.9rem; position: relative; }
+.multi-filter > summary::-webkit-details-marker { display: none; }
+.multi-filter > summary::after { content: "▾"; position: absolute; right: 10px; color: var(--muted); }
+.multi-filter.active > summary { border-color: #2f6fd6; background: #eef3fb; font-weight: 600; }
+.multi-filter .mf-panel { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; min-width: 240px; max-height: 320px;
+  overflow-y: auto; background: #fff; border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); padding: 8px; }
+.multi-filter .mf-actions { display: flex; gap: 6px; margin-bottom: 6px; }
+.multi-filter .mf-options label { display: flex; align-items: center; gap: 6px; padding: 3px 2px; font-size: 0.9rem; color: inherit; margin: 0; cursor: pointer; }
+
+/* v0.25.0: Einfuehrung "So funktioniert's" */
+.intro-card p { margin: 6px 0 8px 0; line-height: 1.45; }
+.intro-card ol { margin: 0; padding-left: 20px; line-height: 1.6; }
+
+/* v0.27.0: dritte Spalte "LED-Belegung" */
+.sidebar-right { flex: 0 0 260px; position: sticky; top: 20px; align-self: flex-start; }
+.led-map-card svg { display: block; width: 100%; max-width: 220px; margin: 6px auto 10px auto; }
+.led-legend { list-style: none; margin: 0 0 8px 0; padding: 0; font-size: 0.82rem; }
+.led-legend li { display: flex; gap: 6px; align-items: baseline; padding: 3px 0; border-bottom: 1px dashed var(--border); }
+.led-legend li:last-child { border-bottom: none; }
+.led-legend .num { font-weight: 700; min-width: 22px; color: #1d3f6e; }
+.led-legend .txt { flex: 1; min-width: 0; }
+.led-legend .pos { font-weight: 600; }
+.led-legend .state { color: var(--muted); }
+.led-legend .state.on { color: #1d6e3a; }
+.led-legend .name { display: block; color: var(--muted); font-size: 0.78rem; overflow-wrap: anywhere; }
+@media (max-width: 1200px) {
+  .app-layout { flex-wrap: wrap; }
+  .sidebar-right { position: static; flex: 1 1 100%; }
+}
+
+/* v0.29.0: Leuchtarten in der LED-Belegung (angenaeherte Takte) */
+.led-blink { animation: led-blink 1s steps(1, end) infinite; }
+@keyframes led-blink { 0% { opacity: 1; } 50% { opacity: 0.12; } }
+.led-flash { animation: led-flash 1s linear infinite; }
+@keyframes led-flash { 0%, 12% { opacity: 1; } 13%, 100% { opacity: 0.12; } }
+.led-billow { animation: led-billow 2.4s ease-in-out infinite; }
+@keyframes led-billow { 0%, 100% { opacity: 0.15; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .led-blink, .led-flash, .led-billow { animation: none; }
+}
+
+/* v0.30.0: Regeln sichern / laden */
+.card-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.rules-backup { display: flex; gap: 6px; }
+a.button-like { display: inline-block; text-decoration: none; border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; font-size: 0.85em; color: inherit; background: #fff; }
+a.button-like:hover { background: #f2f5f9; }

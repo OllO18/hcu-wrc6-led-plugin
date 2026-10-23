@@ -1,0 +1,57 @@
+name: HCU-Paket bauen
+
+# Baut bei jedem Push auf main das ARM64-Image fuer die HCU und legt
+# wrc6plugin-<version>.tar.gz als GitHub-Release "v<version>" ab.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Smoke-Tests
+        run: |
+          npm ci --omit=dev
+          node smoketest.js
+
+      - name: Version lesen
+        id: v
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: ARM64-Image bauen
+        timeout-minutes: 15
+        run: |
+          docker buildx build --platform linux/arm64 \
+            -t io.github.ollo18/wrc6led:${{ steps.v.outputs.version }} --load .
+
+      - name: Image exportieren (.tar.gz)
+        run: |
+          docker save io.github.ollo18/wrc6led:${{ steps.v.outputs.version }} \
+            | gzip > wrc6plugin-${{ steps.v.outputs.version }}.tar.gz
+          ls -la wrc6plugin-*.tar.gz
+
+      - name: Release anlegen/aktualisieren
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="v${{ steps.v.outputs.version }}"
+          FILE="wrc6plugin-${{ steps.v.outputs.version }}.tar.gz"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$FILE" --clobber
+          else
+            gh release create "$TAG" "$FILE" --title "WRC6 Plugin $TAG" --notes "Fuer die HCU: Datei $FILE in HCUweb auf der Plugin-Seite hochladen."
+          fi

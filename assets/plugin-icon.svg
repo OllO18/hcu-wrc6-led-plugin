@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e3e7ee"/>
+    </linearGradient>
+    <linearGradient id="key" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f1f3f7"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0b2545" flood-opacity="0.28"/>
+    </filter>
+    <filter id="glow" x="-200%" y="-200%" width="500%" height="500%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+  <!-- Rahmen -->
+  <rect x="20" y="20" width="216" height="216" rx="34" fill="url(#frame)" stroke="#c9d0db" stroke-width="2" filter="url(#shadow)"/>
+  <!-- Tastenfeld -->
+  <rect x="44" y="44" width="168" height="168" rx="18" fill="#d5dbe5"/>
+  <!-- 6 Tasten: 2 Spalten x 3 Reihen -->
+  <g stroke="#c3cad6" stroke-width="1.5">
+    <rect x="47" y="47"  width="79" height="51" rx="14" fill="url(#key)"/>
+    <rect x="130" y="47" width="79" height="51" rx="14" fill="url(#key)"/>
+    <rect x="47" y="102" width="79" height="52" rx="14" fill="url(#key)"/>
+    <rect x="130" y="102" width="79" height="52" rx="14" fill="url(#key)"/>
+    <rect x="47" y="158" width="79" height="51" rx="14" fill="url(#key)"/>
+    <rect x="130" y="158" width="79" height="51" rx="14" fill="url(#key)"/>
+  </g>
+  <!-- LEDs (leuchtend: rot, gruen, blau, gelb; aus: zwei) -->
+  <g>
+    <circle cx="112" cy="72.5" r="9" fill="#ff3b30" filter="url(#glow)" opacity="0.85"/>
+    <circle cx="112" cy="72.5" r="5.5" fill="#ff3b30"/>
+    <circle cx="144" cy="72.5" r="9" fill="#34c759" filter="url(#glow)" opacity="0.85"/>
+    <circle cx="144" cy="72.5" r="5.5" fill="#34c759"/>
+    <circle cx="112" cy="128" r="5" fill="#b8c0cc"/>
+    <circle cx="144" cy="128" r="9" fill="#2f7cf6" filter="url(#glow)" opacity="0.85"/>
+    <circle cx="144" cy="128" r="5.5" fill="#2f7cf6"/>
+    <circle cx="112" cy="183.5" r="9" fill="#ffcc00" filter="url(#glow)" opacity="0.85"/>
+    <circle cx="112" cy="183.5" r="5.5" fill="#ffcc00"/>
+    <circle cx="144" cy="183.5" r="5" fill="#b8c0cc"/>
+  </g>
+</svg>

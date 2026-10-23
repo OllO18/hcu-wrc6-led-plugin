@@ -1,0 +1,6 @@
+node_modules/
+data/
+authtoken.txt
+*.tar
+*.tar.gz
+*.zip
