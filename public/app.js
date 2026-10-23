@@ -684,8 +684,7 @@ function sourceName(s) {
  * Lage der sechs LEDs am HmIP-WRC6-230 (Spalte 0 = links, 1 = rechts;
  * Reihe 0 = oben). Kanalnummern wie in der Connect API (9-14; 15 = alle
  * LEDs gemeinsam). Zuordnung bestaetigt durch die Kanalgrafik der
- * Homematic IP App (Screenshot der App-Zuordnung). Die gedruckte
- * Bedienungsanleitung nennt abweichend "LEDs (Kanal 7-13)".
+ * Homematic IP App (Screenshot der App-Zuordnung).
  */
 const LED_POSITIONS = {
   9: { col: 0, row: 0, text: "oben links" },

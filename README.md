@@ -101,8 +101,7 @@ die LED also sofort ein).
 ```
 
 Die Nummern sind dieselben wie in der Homematic IP App (Gerät →
-Zuordnung). Die gedruckte Bedienungsanleitung des Wandtasters nennt
-abweichend „LEDs (Kanal 7–13)“.
+Zuordnung).
 
 Kanal 8 des WRC6-230 ist das **eingebaute Relais** (keine LED). Es lässt
 sich als Auslöser verwenden, aber nicht als LED wählen.
